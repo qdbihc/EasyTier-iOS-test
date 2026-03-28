@@ -1,7 +1,7 @@
 name: Build EasyTier iOS IPA
 
 on:
-  workflow_dispatch:
+  workflow_dispatch
 
 jobs:
   build:
@@ -9,11 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: List available schemes
-        run: |
-          xcodebuild -project EasyTier.xcodeproj -list
-
-      - name: Build Archive (with auto-sign disabled)
+      - name: Build
         run: |
           xcodebuild -project EasyTier.xcodeproj \
                      -scheme EasyTier \
@@ -24,8 +20,6 @@ jobs:
                      CODE_SIGNING_ALLOWED=NO \
                      archive
 
-      - name: Export IPA (unsigned)
-        run: |
           xcodebuild -exportArchive \
                      -archivePath build/EasyTier.xcarchive \
                      -exportPath build \
