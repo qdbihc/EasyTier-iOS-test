@@ -1,0 +1,29 @@
+name: Build EasyTier iOS IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          xcodebuild -project EasyTier.xcodeproj \
+                     -scheme EasyTier \
+                     -configuration Release \
+                     -archivePath build/EasyTier.xcarchive \
+                     archive
+
+          xcodebuild -exportArchive \
+                     -archivePath build/EasyTier.xcarchive \
+                     -exportPath build \
+                     -exportOptionsPlist exportOptions.plist
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: EasyTier-iOS-IPA
+          path: build/*.ipa
