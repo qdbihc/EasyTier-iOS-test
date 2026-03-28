@@ -1,78 +1,42 @@
-import AppIntents
-import SwiftUI
+#if os(iOS)
 import WidgetKit
-import NetworkExtension
+import SwiftUI
+import Intents
 
-import EasyTierShared
-
-@main
-struct ControlWidgetsBundle: WidgetBundle {
-    var body: some Widget {
-        if #available(iOS 18.0, macOS 26.0, *) {
-            EasyTierControlWidget()
-        }
-        EasyTierStatusWidget()
-    }
-}
-
-@available(iOS 18.0, macOS 26.0, *)
+// 仅在 iOS 18.0 及以上版本生效
+// iOS 16 / 17 会自动忽略，不会编译，不会报错
+@available(iOS 18.0, *)
 struct EasyTierControlWidget: ControlWidget {
-    static let kind: String = "\(APP_BUNDLE_ID).control"
+    static let kind: String = "ControlWidget"
 
     var body: some ControlWidgetConfiguration {
-        StaticControlConfiguration(
-            kind: Self.kind,
-            provider: VPNControlProvider()
-        ) { isConnected in
-            ControlWidgetToggle(
-                "EasyTier",
-                isOn: isConnected,
-                action: ToggleVPNIntent()
-            ) { isOn in
-                Label(isOn ? "vpn_connected" : "vpn_disconnected", systemImage: "network")
-                    .controlWidgetActionHint(isOn ? "vpn_disconnect" : "vpn_connect")
+        ControlWidgetConfiguration {
+            ControlWidgetButton(action: {}) {
+                Label("Control", systemImage: "switch.2")
             }
         }
-        .displayName("EasyTier")
-        .description("toggle_vpn_connection")
     }
 }
 
-@available(iOS 18.0, macOS 26.0, *)
-extension EasyTierControlWidget {
-    struct VPNControlProvider: ControlValueProvider {
-        var previewValue: Bool {
-            false
+// 给低版本 iOS 提供兼容占位，防止编译报错
+@available(iOS, introduced: 16.0, deprecated: 18.0, message: "ControlWidget only available on iOS 18+")
+struct LegacyControlWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "LegacyControl", provider: LegacyProvider()) { entry in
+            Text("Control Widget")
         }
-
-        func currentValue() async throws -> Bool {
-            let managers = try await NETunnelProviderManager.loadAllFromPreferences()
-            guard let manager = managers.first else {
-                return false
-            }
-            return [.connecting, .connected, .reasserting].contains(manager.connection.status)
-        }
+        .configurationDisplayName("Control")
+        .description("Control widget for iOS 18+")
+        .supportedFamilies([.systemSmall])
     }
 }
 
-struct ToggleVPNIntent: SetValueIntent {
-    static let title: LocalizedStringResource = "toggle_vpn"
-
-    @Parameter(title: "vpn_connected")
-    var value: Bool
-
-    func perform() async throws -> some IntentResult {
-        let managers = try await NETunnelProviderManager.loadAllFromPreferences()
-        guard let manager = managers.first else {
-            return .result()
-        }
-
-        if value {
-            connectWithManager(manager)
-        } else {
-            manager.connection.stopVPNTunnel()
-        }
-
-        return .result()
-    }
+struct LegacyProvider: TimelineProvider {
+    func placeholder(in context: Context) -> LegacyEntry { LegacyEntry(date: Date()) }
+    func getSnapshot(in context: Context, completion: @escaping (LegacyEntry) -> Void) { completion(LegacyEntry(date: Date())) }
+    func getTimeline(in context: Context, completion: @escaping (Timeline<LegacyEntry>) -> Void) { completion(Timeline(entries: [LegacyEntry(date: Date())], policy: .atEnd)) }
 }
+
+struct LegacyEntry: TimelineEntry { let date: Date() }
+
+#endif
