@@ -14,10 +14,14 @@ jobs:
           xcodebuild -project EasyTier.xcodeproj \
                      -scheme EasyTier \
                      -configuration Release \
+                     -destination "generic/platform=iOS" \
                      -archivePath build/EasyTier.xcarchive \
                      CODE_SIGN_IDENTITY="" \
                      CODE_SIGNING_REQUIRED=NO \
                      CODE_SIGNING_ALLOWED=NO \
+                     SUPPORTED_PLATFORMS=iphoneos \
+                     TARGETED_DEVICE_FAMILY=1,2 \
+                     IPHONEOS_DEPLOYMENT_TARGET=16.0 \
                      archive
 
           xcodebuild -exportArchive \
@@ -27,6 +31,7 @@ jobs:
                      CODE_SIGN_IDENTITY="" \
                      CODE_SIGNING_REQUIRED=NO \
                      CODE_SIGNING_ALLOWED=NO
+          
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
