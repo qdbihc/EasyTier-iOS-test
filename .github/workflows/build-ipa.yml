@@ -9,18 +9,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build
+      - name: List available schemes
+        run: |
+          xcodebuild -project EasyTier.xcodeproj -list
+
+      - name: Build Archive (with auto-sign disabled)
         run: |
           xcodebuild -project EasyTier.xcodeproj \
                      -scheme EasyTier \
                      -configuration Release \
                      -archivePath build/EasyTier.xcarchive \
+                     CODE_SIGN_IDENTITY="" \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGNING_ALLOWED=NO \
                      archive
 
+      - name: Export IPA (unsigned)
+        run: |
           xcodebuild -exportArchive \
                      -archivePath build/EasyTier.xcarchive \
                      -exportPath build \
-                     -exportOptionsPlist exportOptions.plist
+                     -exportOptionsPlist exportOptions.plist \
+                     CODE_SIGN_IDENTITY="" \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGNING_ALLOWED=NO
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
